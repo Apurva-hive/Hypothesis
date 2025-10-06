@@ -107,3 +107,99 @@ season_summary = filtered_data.groupby('season').agg({
     'food_rat_interaction': ['mean', 'std']
 })
 print(season_summary)
+# --------------------------------------------
+# Additional Visual Insights (Contribution by Bekhzod Nematjanov)
+# --------------------------------------------
+
+# 1️⃣ Pairplot of key numeric variables to explore relationships
+sns.pairplot(dataset2, vars=[
+    'bat_landing_number',
+    'rat_arrival_number',
+    'food_availability',
+    'rat_minutes'
+], hue='season', palette='Set2')
+plt.suptitle('Pairwise Relationships Between Bat, Rat, and Food Variables', y=1.02)
+plt.show()
+
+# 2️⃣ Scatter plot to visualize relationship between rat arrivals and food availability
+plt.figure(figsize=(10,6))
+sns.scatterplot(
+    x='rat_arrival_number',
+    y='food_availability',
+    hue='season',
+    data=dataset2,
+    palette='coolwarm',
+    s=60,
+    alpha=0.8
+)
+plt.title('Relationship Between Rat Arrivals and Food Availability by Season')
+plt.xlabel('Number of Rat Arrivals')
+plt.ylabel('Food Availability')
+plt.show()
+
+# 3️⃣ Correlation of Rat and Bat activity vs Food availability (custom insight)
+activity_corr = dataset2[['rat_arrival_number', 'bat_landing_number', 'food_availability']].corr()
+print("\nCorrelation between Rat/Bat Activity and Food Availability:")
+print(activity_corr)
+
+# 4️⃣ Save additional plots 
+plt.figure(figsize=(8,5))
+sns.barplot(
+    x='season',
+    y='rat_minutes',
+    data=dataset2,
+    palette='pastel',
+    estimator=np.mean
+)
+plt.title('Average Rat Minutes Spent on Platform by Season')
+plt.xlabel('Season')
+plt.ylabel('Mean Rat Minutes')
+plt.show()
+# --------------------------------------------
+# Additional Visual Insights (Contribution by Bekhzod)
+# --------------------------------------------
+
+# 1️⃣ Pairplot of key numeric variables to explore relationships
+sns.pairplot(dataset2, vars=[
+    'bat_landing_number',
+    'rat_arrival_number',
+    'food_availability',
+    'rat_minutes'
+], hue='season', palette='Set2')
+plt.suptitle('Pairwise Relationships Between Bat, Rat, and Food Variables', y=1.02)
+plt.show()
+
+# 2️⃣ Scatter plot to visualize relationship between rat arrivals and food availability
+plt.figure(figsize=(10,6))
+sns.scatterplot(
+    x='rat_arrival_number',
+    y='food_availability',
+    hue='season',
+    data=dataset2,
+    palette='coolwarm',
+    s=60,
+    alpha=0.8
+)
+plt.title('Relationship Between Rat Arrivals and Food Availability by Season')
+plt.xlabel('Number of Rat Arrivals')
+plt.ylabel('Food Availability')
+plt.show()
+
+# 3️⃣ Correlation of Rat and Bat activity vs Food availability (custom insight)
+activity_corr = dataset2[['rat_arrival_number', 'bat_landing_number', 'food_availability']].corr()
+print("\nCorrelation between Rat/Bat Activity and Food Availability:")
+print(activity_corr)
+
+# 4️⃣ Save additional plots for the report if needed
+plt.figure(figsize=(8,5))
+sns.barplot(
+    x='season',
+    y='rat_minutes',
+    data=dataset2,
+    palette='pastel',
+    estimator=np.mean
+)
+plt.title('Average Rat Minutes Spent on Platform by Season')
+plt.xlabel('Season')
+plt.ylabel('Mean Rat Minutes')
+plt.show()
