@@ -203,3 +203,102 @@ plt.title('Average Rat Minutes Spent on Platform by Season')
 plt.xlabel('Season')
 plt.ylabel('Mean Rat Minutes')
 plt.show()
+# ================================
+# Figures 8–10: Linear Regression (minimal, additive)
+# Response: bat_landing_number  |  Predictors: dataset2 features
+# ================================
+import statsmodels.api as sm
+
+# --- Prep predictors & response (safe coercion) ---
+features = ['rat_arrival_number', 'food_availability', 'rat_minutes',
+            'rat_encounter_frequency', 'food_rat_interaction', 'hours_after_sunset']
+use_cols = [c for c in features if c in dataset2.columns]
+
+df_lr = dataset2.copy()
+# guard against divide-by-zero earlier
+df_lr['rat_encounter_frequency'] = df_lr['rat_encounter_frequency'].replace([np.inf, -np.inf], np.nan)
+
+# Drop rows with missing in y or X
+df_lr = df_lr.dropna(subset=['bat_landing_number'] + use_cols).copy()
+
+# If too few rows, bail gracefully
+if df_lr.shape[0] >= 25 and len(use_cols) >= 2:
+    # --------------------------
+    # Overall model (Investigation A)
+    # --------------------------
+    X = sm.add_constant(df_lr[use_cols])
+    y = df_lr['bat_landing_number']
+    model_all = sm.OLS(y, X).fit()
+
+    # === Figure 8: Residuals vs Fitted (overall) ===
+    plt.figure(figsize=(8,6))
+    sns.residplot(x=model_all.fittedvalues, y=model_all.resid, lowess=True, line_kws={'color':'red'})
+    plt.title("Figure 8. Residuals vs Fitted — Overall Linear Regression")
+    plt.xlabel("Fitted values")
+    plt.ylabel("Residuals")
+    plt.tight_layout()
+    plt.show()
+
+    # === Figure 9: Coefficient magnitudes (overall) ===
+    coef_all = model_all.params.drop(labels=['const'], errors='ignore').sort_values()
+    plt.figure(figsize=(9,6))
+    coef_all.plot(kind='barh')
+    plt.axvline(0, color='black', linestyle='--', linewidth=1)
+    plt.title("Figure 9. Coefficient Estimates — Overall Model")
+    plt.xlabel("Coefficient")
+    plt.tight_layout()
+    plt.show()
+
+    # --------------------------
+    # Seasonal models (Investigation B): Winter vs Spring
+    # --------------------------
+    seasons_to_compare = ['Winter', 'Spring']
+    coef_compare = []
+
+    for s in seasons_to_compare:
+        sub = df_lr[df_lr['season'] == s]
+        # need enough rows to fit
+        if sub.shape[0] >= max(15, 2*len(use_cols)):
+            Xs = sm.add_constant(sub[use_cols])
+            ys = sub['bat_landing_number']
+            m = sm.OLS(ys, Xs).fit()
+            for v in use_cols:
+                coef_compare.append({'Variable': v, 'Season': s, 'Coefficient': m.params.get(v, np.nan)})
+        else:
+            # still record NaNs to keep alignment
+            for v in use_cols:
+                coef_compare.append({'Variable': v, 'Season': s, 'Coefficient': np.nan})
+
+    coef_df = pd.DataFrame(coef_compare)
+    if not coef_df.empty:
+        pivot_coef = coef_df.pivot(index='Variable', columns='Season', values='Coefficient').loc[use_cols]
+
+        # === Figure 10: Seasonal Coefficient Comparison (Winter vs Spring) ===
+        pivot_coef.plot(kind='bar', figsize=(10,6))
+        plt.title("Figure 10. Seasonal Coefficient Comparison — Winter vs Spring")
+        plt.ylabel("Coefficient")
+        plt.axhline(0, color='black', linestyle='--', linewidth=1)
+        plt.tight_layout()
+        plt.show()
+
+        # (Optional) print quick R² for context
+        try:
+            # recompute simple R²s for transparency
+            winter_sub = df_lr[df_lr['season']=='Winter']
+            spring_sub = df_lr[df_lr['season']=='Spring']
+            if winter_sub.shape[0] >= max(15, 2*len(use_cols)):
+                R2_w = sm.OLS(winter_sub['bat_landing_number'], sm.add_constant(winter_sub[use_cols])).fit().rsquared
+            else:
+                R2_w = np.nan
+            if spring_sub.shape[0] >= max(15, 2*len(use_cols)):
+                R2_s = sm.OLS(spring_sub['bat_landing_number'], sm.add_constant(spring_sub[use_cols])).fit().rsquared
+            else:
+                R2_s = np.nan
+            print(f"\nSeasonal R² — Winter: {R2_w:.3f} | Spring: {R2_s:.3f}")
+        except Exception as e:
+            print("Note: could not compute seasonal R² summary:", e)
+    else:
+        print("Note: Not enough seasonal data to plot Figure 10.")
+
+else:
+    print("Note: Not enough rows or predictors for LR figures (need ≥25 rows and ≥2 predictors).")
