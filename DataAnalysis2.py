@@ -302,3 +302,37 @@ if df_lr.shape[0] >= 25 and len(use_cols) >= 2:
 
 else:
     print("Note: Not enough rows or predictors for LR figures (need ≥25 rows and ≥2 predictors).")
+import os, json, numpy as np, matplotlib.pyplot as plt
+from scipy.stats import spearmanr
+
+outB = "contrib_B"; os.makedirs(outB, exist_ok=True)
+
+try:
+    dfB = dataset2[['bat_landing_number','food_availability']].dropna()
+except NameError:
+    import pandas as pd
+    dataset2 = pd.read_csv('dataset2.csv')
+    dfB = dataset2[['bat_landing_number','food_availability']].dropna()
+
+if len(dfB) >= 10:
+    r, p = spearmanr(dfB['bat_landing_number'], dfB['food_availability'])
+    with open(f"{outB}/spearman_bat_food.json", "w") as f:
+        json.dump({"spearman_r": float(r), "p_value": float(p), "n": int(len(dfB))}, f, indent=2)
+
+    plt.figure(figsize=(5,4))
+    x = dfB['food_availability'].to_numpy()
+    y = dfB['bat_landing_number'].to_numpy()
+    plt.scatter(x, y, alpha=0.6)
+    m, b = np.polyfit(x, y, 1)
+    xs = np.linspace(x.min(), x.max(), 50)
+    plt.plot(xs, m*xs + b, linestyle="--")
+    plt.xlabel("Food availability")
+    plt.ylabel("Bat landings")
+    plt.title(f"Bat vs Food (Spearman r={r:.2f}, p={p:.3f})")
+    plt.tight_layout()
+    plt.savefig(f"{outB}/bat_vs_food.png", dpi=200)
+    plt.close()
+
+    print(f"[B] Spearman r={r:.2f}, p={p:.3f}, n={len(dfB)}")
+else:
+    print("[B] Not enough rows for Spearman correlation.")
